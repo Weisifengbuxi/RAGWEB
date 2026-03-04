@@ -3,10 +3,10 @@ import type { ChatRequest, ChatResponse } from '../types'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 60000,
+  timeout: 120000,
 })
 
-export const sendMessage = async (data: ChatRequest & { deepThinking?: boolean }): Promise<ChatResponse> => {
-  const response = await api.post<ChatResponse>('/chat', data)
+export const sendMessage = async (data: ChatRequest): Promise<ChatResponse> => {
+  const response = await api.post<ChatResponse>('/v1/rag/chat', data)
   return response.data
 }

@@ -120,7 +120,7 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { useChatStore } from '../store/chat'
 import { sendMessage } from '../api/chat'
-import type { Message, ChatRequest } from '../types'
+import type { Message, ChatRequest, HistoryItem } from '../types'
 
 const chatStore = useChatStore()
 const inputText = ref('')
@@ -148,16 +148,25 @@ const handleSend = async () => {
   scrollToBottom()
 
   try {
-    const requestData: ChatRequest & { deepThinking?: boolean } = {
-      messages: chatStore.messages,
-      ...(chatStore.isDeepThinking && { deepThinking: true }),
+    // 构建历史记录：当前消息已加入 store，去掉最后一条（即刚发的用户消息），其余作为 history
+    const allMessages = chatStore.messages
+    const history: HistoryItem[] = allMessages
+      .slice(0, -1)
+      .filter((m) => m.id !== 'welcome')
+      .map((m) => ({ role: m.role, content: m.content }))
+
+    const requestData: ChatRequest = {
+      question: userMessage.content,
+      history: history.length > 0 ? history : undefined,
+      enable_thinking: chatStore.isDeepThinking,
+      return_thinking: chatStore.isDeepThinking,
     }
 
     const response = await sendMessage(requestData)
 
     const assistantMessage: Message = {
-      id: response.id,
-      content: response.content,
+      id: Date.now().toString(),
+      content: response.choices[0]?.message?.content ?? '（无响应内容）',
       role: 'assistant',
       timestamp: Date.now(),
     }
